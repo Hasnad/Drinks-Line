@@ -9,6 +9,8 @@ public static class EventManager
     public static event Action<Block> OnBlockSpawned;
     public static event Action<List<Block>> OnBlockMatchFound;
     public static event Action<XpHolder> OnXpValueUpdated;
+    public static event Action<Recorder> OnUndoPerformed;
+    public static event Action<Recorder> OnNewRecorderCreated;
 
 
     public static void UpdateNextBlock(List<BlockType> blockTypes)
@@ -39,5 +41,15 @@ public static class EventManager
     public static void UpdateXpValueUpdated(XpHolder xpHolder)
     {
         OnXpValueUpdated?.Invoke(xpHolder);
+    }
+
+    public static void UpdateUndoPerformed(Recorder recorder)
+    {
+        OnUndoPerformed?.Invoke(recorder);
+    }
+
+    public static void UpdateNewRecorderCreated(Recorder recorder)
+    {
+        OnNewRecorderCreated?.Invoke(recorder);
     }
 }

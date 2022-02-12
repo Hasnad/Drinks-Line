@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -20,12 +21,19 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI levelText;
 
+    [SerializeField]
+    private GameObject starBurstParticle;
+    [SerializeField]
+    private Transform sparkleAreaParticle;
 
     private float xpBarMaskWidth;
     private RawImage xpBarImg;
 
+    private Camera cam;
+
     private void Awake()
     {
+        cam = Camera.main;
         xpBarImg = xpBarMaskRect.GetChild(0).GetComponent<RawImage>();
         xpBarMaskWidth = xpBarMaskRect.sizeDelta.x;
         DOVirtual.Float(0, 1, 15, value =>
@@ -36,6 +44,20 @@ public class UIManager : MonoBehaviour
         }).SetEase(Ease.Linear).SetLoops(-1, LoopType.Incremental);
     }
 
+    private void Start()
+    {
+        Invoke(nameof(TurnOnFx), 2);
+    }
+
+    private void TurnOnFx()
+    {
+        starBurstParticle.transform.position = levelText.rectTransform.position;
+        var pos = xpBarMaskRect.position;
+        pos.x += 2.356f;
+        sparkleAreaParticle.position = pos;
+
+        sparkleAreaParticle.gameObject.SetActive(true);
+    }
 
     private void OnEnable()
     {
@@ -61,7 +83,7 @@ public class UIManager : MonoBehaviour
         if (totalLevelIncreased > 0)
         {
             var sequence = DOTween.Sequence();
-            
+
             sequence.Append(DOVirtual.Float(xpBarMaskRect.sizeDelta.x / xpBarMaskWidth, 1, xpIncreaseTime, value =>
             {
                 var sizeDelta = xpBarMaskRect.sizeDelta;
@@ -70,8 +92,11 @@ public class UIManager : MonoBehaviour
             }));
 
             levelText.text = (xpHolder.OldLevels + 1).ToString();
+            starBurstParticle.SetActive(true);
 
             totalLevelIncreased--;
+
+            cam.DOShakePosition(0.15f, 0.6f).OnComplete(() => { cam.DOShakeRotation(0.15f, 0.6f); });
 
             if (totalLevelIncreased > 0)
             {
@@ -81,12 +106,14 @@ public class UIManager : MonoBehaviour
                     sizeDelta.x = value * xpBarMaskWidth;
                     xpBarMaskRect.sizeDelta = sizeDelta;
                 }).SetLoops(totalLevelIncreased, LoopType.Restart));
-                
+
                 sequence.Join(DOVirtual.Int(xpHolder.OldLevels + 1, xpHolder.CurrentsLevels,
                     xpIncreaseTime * (totalLevelIncreased + 1),
                     value =>
                     {
                         levelText.text = value.ToString();
+                        starBurstParticle.SetActive(false);
+                        starBurstParticle.SetActive(true);
                     }));
             }
 

@@ -11,7 +11,7 @@ using Random = UnityEngine.Random;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    private GameState gameState;
+    public GameState GameState { get; private set; }
 
     public Vector2Int gridSize;
     public int minMatchSize = 3;
@@ -46,6 +46,45 @@ public class GameManager : MonoBehaviour
         cam = Camera.main;
         audioManager = AudioManager.Instance;
         ChangeState(GameState.GenerateLevel);
+    }
+
+    private void OnEnable()
+    {
+        EventManager.OnNewRecorderCreated += OnNewRecorderCreated;
+        EventManager.OnUndoPerformed += OnUndoPerformed;
+    }
+
+    private void OnUndoPerformed(Recorder recorder)
+    {
+        foreach (var newlyAddedBlock in newlyAddedBlocks)
+        {
+            newlyAddedBlock.occupiedNode.occupiedBlock = null;
+            newlyAddedBlock.transform.DOKill();
+            Destroy(newlyAddedBlock.gameObject);
+        }
+
+        newlyAddedBlocks.Clear();
+        newlyAddedBlocks.AddRange(recorder.NewlyAddedBlocks);
+
+        nextSpawnBlocks.Clear();
+        nextSpawnBlocks.AddRange(recorder.NextSpawnBlocks);
+        EventManager.UpdateNextBlock(nextSpawnBlocks);
+
+        recorder.CurrentNode.occupiedBlock.transform.position = recorder.PreviousNode.Pos;
+        recorder.PreviousNode.SetOccupiedBlock(recorder.CurrentNode.occupiedBlock);
+        recorder.CurrentNode.occupiedBlock = null;
+    }
+
+    private void OnDisable()
+    {
+        EventManager.OnNewRecorderCreated -= OnNewRecorderCreated;
+        EventManager.OnUndoPerformed -= OnUndoPerformed;
+    }
+
+    private void OnNewRecorderCreated(Recorder recorder)
+    {
+        recorder.NewlyAddedBlocks.AddRange(newlyAddedBlocks);
+        recorder.NextSpawnBlocks.AddRange(nextSpawnBlocks);
     }
 
     private void GenerateLevel()
@@ -121,12 +160,13 @@ public class GameManager : MonoBehaviour
             ChangeState(GameState.Loss);
             return;
         }
+
         ChangeState(GameState.WaitingInput);
     }
 
     private void Update()
     {
-        if (gameState != GameState.WaitingInput) return;
+        if (GameState != GameState.WaitingInput) return;
         if (Input.GetMouseButtonDown(0))
         {
             var hit = Physics2D.Raycast(cam.ScreenToWorldPoint(Input.mousePosition), Vector2.zero,
@@ -185,6 +225,7 @@ public class GameManager : MonoBehaviour
 
                         sequence.OnComplete(() =>
                         {
+                            UndoSystem.Instance.Record(selectedBlock.occupiedNode, path[path.Count - 1]);
                             selectedBlock.occupiedNode.occupiedBlock = null;
                             node.SetOccupiedBlock(selectedBlock);
                             EventManager.UpdateBlockDeselected(selectedBlock);
@@ -309,8 +350,8 @@ public class GameManager : MonoBehaviour
 
     private void ChangeState(GameState state)
     {
-        gameState = state;
-        switch (gameState)
+        GameState = state;
+        switch (GameState)
         {
             case GameState.GenerateLevel:
                 GenerateLevel();

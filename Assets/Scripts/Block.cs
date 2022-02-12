@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 
 public class Block : MonoBehaviour
@@ -35,6 +36,11 @@ public class Block : MonoBehaviour
         var color = frontRenderer.color;
         color.a *= 0.8f;
         frontRenderer.color = color;
+    }
+
+    private void OnDisable()
+    {
+        transform.DOKill();
     }
 }
 [Serializable]

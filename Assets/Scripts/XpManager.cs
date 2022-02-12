@@ -6,7 +6,7 @@ public class XpManager : MonoBehaviour
 {
     private readonly Xp xp = new Xp();
     public int pointsPerBlock = 2;
-    
+
 
     private void Start()
     {
@@ -27,6 +27,7 @@ public class XpManager : MonoBehaviour
     private void OnBlockMatchFound(List<Block> blocks)
     {
         xp.IncreasePoints(blocks.Count * pointsPerBlock);
+        UndoSystem.Instance.ClearAllRecord();
     }
 
 
@@ -51,9 +52,8 @@ public class XpManager : MonoBehaviour
                 CurrentNormalizedPoints = Normalize(),
                 PointsInAGame = 0
             };
-            
-            EventManager.UpdateXpValueUpdated(xpHolder);
 
+            EventManager.UpdateXpValueUpdated(xpHolder);
         }
 
         private float Normalize()
