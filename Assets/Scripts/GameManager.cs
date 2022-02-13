@@ -69,7 +69,7 @@ public class GameManager : MonoBehaviour
         nextSpawnBlocks.Clear();
         nextSpawnBlocks.AddRange(recorder.NextSpawnBlocks);
         EventManager.UpdateNextBlock(nextSpawnBlocks);
-
+        
         recorder.CurrentNode.occupiedBlock.transform.position = recorder.PreviousNode.Pos;
         recorder.PreviousNode.SetOccupiedBlock(recorder.CurrentNode.occupiedBlock);
         recorder.CurrentNode.occupiedBlock = null;
@@ -210,6 +210,7 @@ public class GameManager : MonoBehaviour
                         if (path == null)
                         {
                             Debug.Log("No Path Found");
+                            ToastSystem.Instance.Toast("Invalid Move");
                             ChangeState(GameState.WaitingInput);
                             return;
                         }
@@ -329,10 +330,11 @@ public class GameManager : MonoBehaviour
         return c;
     }
 
-    private void ResetLevel(bool sceneLoad)
+    public void ResetLevel(bool sceneLoad)
     {
         if (sceneLoad)
         {
+            DOTween.KillAll();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             return;
         }
@@ -348,7 +350,7 @@ public class GameManager : MonoBehaviour
 
     public Node GetNodeFromPosition(Vector2 pos) => nodes.FirstOrDefault(n => n.Pos == pos);
 
-    private void ChangeState(GameState state)
+    public void ChangeState(GameState state)
     {
         GameState = state;
         switch (GameState)
@@ -371,6 +373,7 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.Loss:
                 print("You lost");
+                EventManager.UpdateGameLost();
                 break;
             case GameState.Reset:
                 ResetLevel(true);

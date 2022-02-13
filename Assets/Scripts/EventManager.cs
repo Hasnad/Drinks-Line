@@ -11,6 +11,7 @@ public static class EventManager
     public static event Action<XpHolder> OnXpValueUpdated;
     public static event Action<Recorder> OnUndoPerformed;
     public static event Action<Recorder> OnNewRecorderCreated;
+    public static event Action OnGameLost;
 
 
     public static void UpdateNextBlock(List<BlockType> blockTypes)
@@ -51,5 +52,10 @@ public static class EventManager
     public static void UpdateNewRecorderCreated(Recorder recorder)
     {
         OnNewRecorderCreated?.Invoke(recorder);
+    }
+
+    public static void UpdateGameLost()
+    {
+        OnGameLost?.Invoke();
     }
 }

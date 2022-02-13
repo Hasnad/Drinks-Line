@@ -38,6 +38,7 @@ public class XpManager : MonoBehaviour
         private int pointsRequiredToLevelUp;
         private const int LevelUpMultiplier = 2;
         private int pointsInSingleMatch;
+        private int highestPointsInSingleMatch;
 
         public void Init()
         {
@@ -50,7 +51,8 @@ public class XpManager : MonoBehaviour
                 CurrentPoints = points,
                 CurrentsLevels = levels,
                 CurrentNormalizedPoints = Normalize(),
-                PointsInAGame = 0
+                PointsInAGame = 0,
+                HighestPointsInAGame = highestPointsInSingleMatch
             };
 
             EventManager.UpdateXpValueUpdated(xpHolder);
@@ -67,6 +69,7 @@ public class XpManager : MonoBehaviour
             ES3.Save("points", points);
             ES3.Save("levels", levels);
             ES3.Save("levelUpPoints", pointsRequiredToLevelUp);
+            ES3.Save("highestPoints", highestPointsInSingleMatch);
         }
 
         private void Load()
@@ -74,6 +77,7 @@ public class XpManager : MonoBehaviour
             points = ES3.Load("points", 0);
             levels = ES3.Load("levels", 0);
             pointsRequiredToLevelUp = ES3.Load("levelUpPoints", 10);
+            highestPointsInSingleMatch = ES3.Load("highestPoints", 0);
         }
 
         public void IncreasePoints(int amount)
@@ -86,11 +90,16 @@ public class XpManager : MonoBehaviour
             };
             points += amount;
             pointsInSingleMatch += amount;
+            if (pointsInSingleMatch > highestPointsInSingleMatch)
+            {
+                highestPointsInSingleMatch = pointsInSingleMatch;
+            }
             LevelUp();
             xpHolder.CurrentPoints = points;
             xpHolder.CurrentsLevels = levels;
             xpHolder.CurrentNormalizedPoints = Normalize();
             xpHolder.PointsInAGame = pointsInSingleMatch;
+            xpHolder.HighestPointsInAGame = highestPointsInSingleMatch;
             Save();
             EventManager.UpdateXpValueUpdated(xpHolder);
         }
@@ -116,4 +125,5 @@ public struct XpHolder
     public float OldNormalizedPoints;
     public float CurrentNormalizedPoints;
     public int PointsInAGame;
+    public int HighestPointsInAGame;
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class UndoSystem : MonoBehaviour
 {
-    private Stack<Recorder> RecorderStack = new Stack<Recorder>();
+    private readonly Stack<Recorder> recorderStack = new Stack<Recorder>();
     public static UndoSystem Instance;
 
     private void Awake()
@@ -20,20 +20,25 @@ public class UndoSystem : MonoBehaviour
             CurrentNode = currentNode
         };
         EventManager.UpdateNewRecorderCreated(recorder);
-        RecorderStack.Push(recorder);
+        recorderStack.Push(recorder);
     }
 
     public void PerformUndo()
     {
-        if (RecorderStack.Count > 0 && GameManager.Instance.GameState == GameState.WaitingInput)
+        if (CanPerformUndo())
         {
-            EventManager.UpdateUndoPerformed(RecorderStack.Pop());
+            EventManager.UpdateUndoPerformed(recorderStack.Pop());
         }
+    }
+
+    public bool CanPerformUndo()
+    {
+        return recorderStack.Count > 0 && GameManager.Instance.GameState == GameState.WaitingInput;
     }
 
     public void ClearAllRecord()
     {
-        RecorderStack.Clear();
+        recorderStack.Clear();
     }
 }
 

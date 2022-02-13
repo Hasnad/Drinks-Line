@@ -20,14 +20,30 @@ public class UIManager : MonoBehaviour
     private TextMeshProUGUI pointsText;
     [SerializeField]
     private TextMeshProUGUI levelText;
+    [SerializeField]
+    private TextMeshProUGUI highesPointText;
 
     [SerializeField]
     private GameObject starBurstParticle;
     [SerializeField]
     private Transform sparkleAreaParticle;
+    [SerializeField]
+    private Transform lostPanel;
+    [SerializeField]
+    private Transform undoPanel;
+    [SerializeField]
+    private Transform restartPanel;
+    [SerializeField]
+    private RectTransform highestPointsImg;
+    [SerializeField]
+    private RectTransform pointsImg;
+    [SerializeField]
+    private GameObject showerParticle;
 
     private float xpBarMaskWidth;
     private RawImage xpBarImg;
+
+    private int lastCelebration = 0;
 
     private Camera cam;
 
@@ -49,6 +65,43 @@ public class UIManager : MonoBehaviour
         Invoke(nameof(TurnOnFx), 2);
     }
 
+    public void TurnOnUndoPanel()
+    {
+        if (!UndoSystem.Instance.CanPerformUndo())
+        {
+            ToastSystem.Instance.Toast(
+                "No Undo Available. If any blocks is matched previously, it will clear all undo record");
+            return;
+        }
+
+        undoPanel.localScale = Vector3.zero;
+        undoPanel.gameObject.SetActive(true);
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(0, 1, 0.5f, value => { undoPanel.localScale = Vector3.one * value; });
+    }
+
+    public void TurnOffUndoPanel()
+    {
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(1, 0, 0.5f, value => { undoPanel.localScale = Vector3.one * value; })
+            .OnComplete(() => { undoPanel.gameObject.SetActive(false); });
+    }
+
+    public void TurnOnRestartPanel()
+    {
+        restartPanel.localScale = Vector3.zero;
+        restartPanel.gameObject.SetActive(true);
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(0, 1, 0.5f, value => { restartPanel.localScale = Vector3.one * value; });
+    }
+
+    public void TurnOffRestartPanel()
+    {
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(1, 0, 0.5f, value => { restartPanel.localScale = Vector3.one * value; })
+            .OnComplete(() => { restartPanel.gameObject.SetActive(false); });
+    }
+
     private void TurnOnFx()
     {
         starBurstParticle.transform.position = levelText.rectTransform.position;
@@ -63,18 +116,70 @@ public class UIManager : MonoBehaviour
     {
         EventManager.OnUpdateNextBlock += OnUpdateNextBlock;
         EventManager.OnXpValueUpdated += OnXpValueUpdated;
+        EventManager.OnGameLost += OnGameLost;
+        EventManager.OnUndoPerformed += OnUndoPerformed;
+    }
+
+    private void OnUndoPerformed(Recorder recorder)
+    {
+        TurnOffUndoPanel();
+    }
+
+
+    private void OnGameLost()
+    {
+        lostPanel.gameObject.SetActive(true);
+        lostPanel.localScale = Vector3.zero;
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(0, 1, 0.5f, value => { lostPanel.localScale = Vector3.one * value; });
     }
 
     private void OnDisable()
     {
         EventManager.OnUpdateNextBlock -= OnUpdateNextBlock;
         EventManager.OnXpValueUpdated -= OnXpValueUpdated;
+        EventManager.OnGameLost -= OnGameLost;
+        EventManager.OnUndoPerformed -= OnUndoPerformed;
     }
 
     private void OnXpValueUpdated(XpHolder xpHolder)
     {
         var totalLevelIncreased = xpHolder.CurrentsLevels - xpHolder.OldLevels;
+
+        if (xpHolder.PointsInAGame - lastCelebration >= 50)
+        {
+            ToastSystem.Instance.Toast(QuoteGenerator.GetCelebrationQuote(), 7);
+            showerParticle.SetActive(true);
+            AudioManager.Instance.PlayMergeClip();
+            lastCelebration = xpHolder.PointsInAGame;
+            if (totalLevelIncreased == 0)
+            {
+                cam.DOShakePosition(0.15f, 0.6f).OnComplete(() => { cam.DOShakeRotation(0.15f, 0.6f); });
+            }
+        }
+
         pointsText.text = "Points: " + xpHolder.PointsInAGame;
+        highesPointText.text = "Highest Points: " + xpHolder.HighestPointsInAGame;
+        highestPointsImg.gameObject.SetActive(true);
+        pointsImg.gameObject.SetActive(true);
+        if (xpHolder.HighestPointsInAGame == 0)
+        {
+            highestPointsImg.localScale = Vector3.one;
+            pointsImg.localScale = Vector3.zero;
+        }
+        else if (xpHolder.HighestPointsInAGame >= xpHolder.PointsInAGame)
+        {
+            highestPointsImg.localScale = Vector3.one;
+            var ratio = xpHolder.PointsInAGame / (float)xpHolder.HighestPointsInAGame;
+            pointsImg.DOScale(Vector3.one * ratio, 1f);
+        }
+        else
+        {
+            pointsImg.localScale = Vector3.one;
+            var ratio = xpHolder.HighestPointsInAGame / (float)xpHolder.PointsInAGame;
+            highestPointsImg.DOScale(Vector3.one * ratio, 1f);
+        }
+
         if (totalLevelIncreased == 0)
         {
             levelText.text = xpHolder.CurrentsLevels.ToString();
