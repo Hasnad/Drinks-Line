@@ -69,7 +69,7 @@ public class GameManager : MonoBehaviour
         nextSpawnBlocks.Clear();
         nextSpawnBlocks.AddRange(recorder.NextSpawnBlocks);
         EventManager.UpdateNextBlock(nextSpawnBlocks);
-        
+
         recorder.CurrentNode.occupiedBlock.transform.position = recorder.PreviousNode.Pos;
         recorder.PreviousNode.SetOccupiedBlock(recorder.CurrentNode.occupiedBlock);
         recorder.CurrentNode.occupiedBlock = null;
@@ -346,6 +346,18 @@ public class GameManager : MonoBehaviour
         Destroy(board.gameObject);
     }
 
+    public void RemoveAd()
+    {
+        ES3.Save<bool>("noAds", true);
+        AdController.Instance.HideBannerAd();
+        ToastSystem.Instance.Toast("Purchase Successful.");
+    }
+
+    public void RemoveAdPurchaseFailed()
+    {
+        ToastSystem.Instance.Toast("Purchase Failed.");
+    }
+
     private BlockType GetBlockTypeByValue(int value) => blockTypes.First(b => b.value == value);
 
     public Node GetNodeFromPosition(Vector2 pos) => nodes.FirstOrDefault(n => n.Pos == pos);
@@ -373,6 +385,7 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.Loss:
                 print("You lost");
+                AdController.Instance.ShowInterstitialAd();
                 EventManager.UpdateGameLost();
                 break;
             case GameState.Reset:

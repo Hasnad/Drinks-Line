@@ -34,6 +34,12 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private Transform restartPanel;
     [SerializeField]
+    private Transform adRemovePanel;
+    [SerializeField]
+    private GameObject adRemoveBtn;
+    [SerializeField]
+    private Transform tcPanel;
+    [SerializeField]
     private RectTransform highestPointsImg;
     [SerializeField]
     private RectTransform pointsImg;
@@ -63,6 +69,35 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         Invoke(nameof(TurnOnFx), 2);
+        if (ES3.Load("noAds", false))
+        {
+            adRemoveBtn.SetActive(false);
+        }
+        if (!ES3.Load("tc", false))
+        {
+            TurnOnTcPanel();
+        }
+    }
+
+    public void OpenTc()
+    {
+        Application.OpenURL("https://www.privacypolicygenerator.info/live.php?token=4QOVojPiwoj5tldVu9j86nsS3VkzPmil");
+    }
+    
+    public void TurnOnTcPanel()
+    {
+        tcPanel.localScale = Vector3.zero;
+        tcPanel.gameObject.SetActive(true);
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(0, 1, 0.5f, value => { tcPanel.localScale = Vector3.one * value; });
+    }
+    
+    public void TurnOffTcPanel()
+    {
+        ES3.Save("tc",true);
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(1, 0, 0.5f, value => { tcPanel.localScale = Vector3.one * value; })
+            .OnComplete(() => { tcPanel.gameObject.SetActive(false); });
     }
 
     public void TurnOnUndoPanel()
@@ -74,6 +109,11 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        if (!AdController.Instance.rewardIsReady)
+        {
+            ToastSystem.Instance.Toast("No Ad is available. So, Can not perform undo.");
+            return;
+        }
         undoPanel.localScale = Vector3.zero;
         undoPanel.gameObject.SetActive(true);
         AudioManager.Instance.PlayMergeClip();
@@ -100,6 +140,21 @@ public class UIManager : MonoBehaviour
         AudioManager.Instance.PlayMergeClip();
         DOVirtual.Float(1, 0, 0.5f, value => { restartPanel.localScale = Vector3.one * value; })
             .OnComplete(() => { restartPanel.gameObject.SetActive(false); });
+    }
+    
+    public void TurnOnAdRemovePanel()
+    {
+        adRemovePanel.localScale = Vector3.zero;
+        adRemovePanel.gameObject.SetActive(true);
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(0, 1, 0.5f, value => { adRemovePanel.localScale = Vector3.one * value; });
+    }
+
+    public void TurnOffAdRemovePanel()
+    {
+        AudioManager.Instance.PlayMergeClip();
+        DOVirtual.Float(1, 0, 0.5f, value => { adRemovePanel.localScale = Vector3.one * value; })
+            .OnComplete(() => { adRemovePanel.gameObject.SetActive(false); });
     }
 
     private void TurnOnFx()

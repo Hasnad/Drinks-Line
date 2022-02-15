@@ -12,6 +12,11 @@ public class UndoSystem : MonoBehaviour
         Instance = this;
     }
 
+    public void ShowRewardedAdForUndo()
+    {
+        AdController.Instance.ShowRewardedAd();
+    }
+
     public void Record(Node previousNode, Node currentNode)
     {
         var recorder = new Recorder
